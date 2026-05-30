@@ -1,0 +1,61 @@
+[window]
+opacity   = 1
+padding.x = 10
+padding.y = 10
+
+decorations               = "Full"
+decorations_theme_variant = "Light" # "Dark"
+
+[window.dimensions]                 # needed for my default scratchpad super+a
+columns = 133
+lines = 40
+
+[font]
+normal.family      = "Droid Sans Mono"
+bold.family        = "Droid Sans Mono"
+italic.family      = "Droid Sans Mono"
+bold_italic.family = "Droid Sans Mono"
+size = 11
+
+[font.offset]
+x = 0
+y = 0
+
+[[keyboard.bindings]]               # Add this section for Ctrl+Shift+Tab
+key   = "Tab"
+mods  = "Control|Shift"
+chars = "\u001b[1;6Z"
+
+[[keyboard.bindings]]               # Open a new Alacritty window in the same working directory
+key    = "N"
+mods   = "Control|Shift"
+action = "SpawnNewInstance"
+
+[colors.primary]
+foreground = '#b4b4bf'
+background = '#1A1818'
+
+[colors.cursor]
+text   = "#000000"
+cursor = "#f5ca0c"
+
+# [[keyboard.bindings]]
+# Paste with Ctrl+V
+# key = "V"
+# mods = "Control"
+# action = "Paste"
+
+# [[keyboard.bindings]]
+# 1. Map Ctrl + Shift + C to send the Interrupt signal
+# \u0003 is the hexadecimal code for the ASCII character "ETX" (End of Text),
+# which is interpreted by the shell as a SIGINT (Interrupt).
+# key = "C"
+# mods = "Control|Shift"
+# chars = "\u0003" 
+
+# [[keyboard.bindings]]
+# 2. Map Ctrl + C to do NOTHING
+# This prevents it from sending the signal to the shell.
+# key = "C"
+# mods = "Control"
+# action = "None"
