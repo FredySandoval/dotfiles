@@ -3,7 +3,11 @@
 -- Core Neovim settings, leaders, options, basic keymaps, basic autocmds
 -- ========================================================================
 do
-
+  vim.opt.autoread = true
+  vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI" }, {
+    pattern = "*",
+    command = "checktime",
+  })
   vim.opt.guicursor = {        -- Set cursor shape by mode:
     "n-v-c:block",             -- normal/visual/command                = █
     "i-ci-ve:ver25",           -- insert/command-insert/visual-exclude = ▏
@@ -108,7 +112,7 @@ do
     update_in_insert = false,
     severity_sort    = true,
     float            = { border = 'rounded', source = 'if_many' },
-    underline        = { severity = { min = vim.diagnostic.severity.WARN } },
+    underline        = true,
 
     -- Can switch between these as you prefer
     virtual_text  = true, -- Text shows up at the end of the line
@@ -247,6 +251,54 @@ do
   -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
   vim.cmd.colorscheme 'vscode'
 
+  -- Dim comments only; keep the rest of the vscode colorscheme unchanged.
+  -- Tree-sitter/LSP can use their own comment highlight groups, so override those too.
+  local function dim_comments()
+    local comment = {
+      fg = '#4e574c',
+      italic = false,
+    }
+
+    for _, group in ipairs {
+      'Comment',
+      '@comment',
+      '@comment.documentation',
+      '@comment.error',
+      '@comment.warning',
+      '@comment.todo',
+      '@comment.note',
+      '@lsp.type.comment',
+    } do
+      vim.api.nvim_set_hl(0, group, comment)
+    end
+  end
+
+  local function soft_diagnostic_underlines()
+    -- Soft diagnostic underline colors. `sp` controls underline/undercurl color.
+    vim.api.nvim_set_hl(0, 'DiagnosticUnderlineError', { undercurl = true, sp = '#9c3638' })
+    vim.api.nvim_set_hl(0, 'DiagnosticUnderlineWarn',  { undercurl = true, sp = '#d7ba7d' })
+    vim.api.nvim_set_hl(0, 'DiagnosticUnderlineInfo',  { undercurl = true, sp = '#75beff' })
+    vim.api.nvim_set_hl(0, 'DiagnosticUnderlineHint',  { undercurl = true, sp = '#8fbc8f' })
+
+
+    vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextError', { fg = '#693738', bg = 'NONE' })
+    vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextWarn',  { fg = '#d7ba7d', bg = 'NONE' })
+    vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextInfo',  { fg = '#75beff', bg = 'NONE' })
+    vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextHint',  { fg = '#8fbc8f', bg = 'NONE' })
+  end
+
+  local function apply_theme_overrides()
+    dim_comments()
+    soft_diagnostic_underlines()
+  end
+
+  apply_theme_overrides()
+
+  vim.api.nvim_create_autocmd('ColorScheme', {
+    pattern = 'vscode',
+    callback = apply_theme_overrides,
+  })
+
 end
 
 -- ============================================================
@@ -358,14 +410,14 @@ do
   local servers = {
     -- clangd = {},
     -- gopls = {},
-    -- pyright = {},
+    pyright = {},
     -- rust_analyzer = {},
     --
     -- Some languages (like typescript) have entire language plugins that can be useful:
     --    https://github.com/pmizio/typescript-tools.nvim
     --
     -- But for many setups, the LSP (`ts_ls`) will work just fine
-    -- ts_ls = {},
+    ts_ls = {},
 
     -- stylua is a formatter, not an LSP server. Install it via Mason tools below.
 
@@ -556,3 +608,9 @@ vim.api.nvim_set_hl(0, "Visual", {
   fg = "#ffffff", -- selected text color
   bg = "#3297FD", -- selected background color
 })
+
+-- autopairs
+-- https://github.com/windwp/nvim-autopairs
+
+vim.pack.add { 'https://github.com/windwp/nvim-autopairs' }
+require('nvim-autopairs').setup {}
