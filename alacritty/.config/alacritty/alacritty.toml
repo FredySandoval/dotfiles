@@ -11,15 +11,15 @@ columns = 133
 lines = 40
 
 [font]
-normal.family      = "Droid Sans Mono"
-bold.family        = "Droid Sans Mono"
-italic.family      = "Droid Sans Mono"
-bold_italic.family = "Droid Sans Mono"
-size = 11
+normal.family      = "Source Code Pro"
+bold.family        = "Source Code Pro"
+italic.family      = "Source Code Pro"
+bold_italic.family = "Source Code Pro"
+size = 12
 
 [font.offset]
 x = 0
-y = 0
+y = 1
 
 [[keyboard.bindings]]               # Add this section for Ctrl+Shift+Tab
 key   = "Tab"
@@ -33,7 +33,7 @@ action = "SpawnNewInstance"
 
 [colors.primary]
 foreground = '#b4b4bf'
-background = '#1A1818'
+background = '#1d1f23'
 
 [colors.cursor]
 text   = "#000000"
