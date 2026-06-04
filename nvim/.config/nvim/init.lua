@@ -299,6 +299,24 @@ do
     callback = apply_theme_overrides,
   })
 
+
+  vim.api.nvim_set_hl(0, 'Normal',       { bg = '#1d1f23' })     -- main editor background
+  vim.api.nvim_set_hl(0, 'NormalNC',     { bg = '#000000' })     -- inactive windows
+  vim.api.nvim_set_hl(0, 'NormalFloat',  { bg = '#000000' })     -- floating windows
+  vim.api.nvim_set_hl(0, 'FloatBorder',  { bg = '#000000' })     -- float borders
+  vim.api.nvim_set_hl(0, 'SignColumn',   { bg = '#1d1f23' })     -- gutter/sign column
+  vim.api.nvim_set_hl(0, 'LineNr',       { bg = '#1d1f23', fg = '#363636' })     -- line number column
+  vim.api.nvim_set_hl(0, 'CursorLine',   { bg = '#1A1A1A' })     -- current line
+  vim.api.nvim_set_hl(0, 'CursorLineNr', { bg = '#000000' })     -- current line number
+  vim.api.nvim_set_hl(0, 'StatusLine',   { bg = '#000000' })     -- active statusline
+  vim.api.nvim_set_hl(0, 'StatusLineNC', { bg = '#000000' })     -- inactive statusline
+  vim.api.nvim_set_hl(0, 'WinSeparator', { bg = '#000000' })     -- window separators
+  vim.api.nvim_set_hl(0, 'Pmenu',        { bg = '#000000' })     -- completion menu
+  vim.api.nvim_set_hl(0, 'PmenuSel',     { bg = '#000000' })     -- selected completion item
+  vim.api.nvim_set_hl(0, 'TabLine',      { bg = '#000000' })     -- tabline
+  vim.api.nvim_set_hl(0, 'TabLineSel',   { bg = '#000000' })     -- selected tab
+  vim.api.nvim_set_hl(0, 'EndOfBuffer',  { bg = '#1d1f23' })     -- `~` empty buffer area
+
 end
 
 -- ============================================================
