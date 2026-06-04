@@ -1,0 +1,407 @@
+gui:
+  sidePanelWidth: 0.25 
+  nerdFontsVersion: "3"
+  showFileTree: true
+  promptToReturnFromSubprocess: true
+# Modifiers bold default reverse (useful for high-contrast) underline strikethrough
+#1D1F23 dark blue
+#C15B62 red light
+#729FBC light cyan
+#A0BE85 green light
+#B294BB light purple
+#ABA1A5 grayish
+#E5A36B orange light
+#EAD291 yellow light
+#C1CACF white light
+  theme:
+    activeBorderColor:          # Border color of focused window
+      - "#A0BE85"
+      - bold
+    inactiveBorderColor:        # Border color of non-focused windows
+      - "#B294BB"
+    searchingActiveBorderColor: # Border color of focused window when searching in that window
+      - red
+      - bold
+    optionsTextColor:           # Color of keybindings help text in the bottom line
+      - "#7E6686"
+      - reverse
+    selectedLineBgColor:        # Background color of selected line.
+     - "#3C4831"                # See https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md#highlighting-the-selected-line
+     - bold
+                                # Background color of selected line when view doesn't have focus.
+    inactiveViewSelectedLineBgColor:
+      - "#3C4831"
+    cherryPickedCommitFgColor:  # Foreground color of copied commit
+      - red
+    cherryPickedCommitBgColor:  # Background color of copied commit
+      - red
+    markedBaseCommitFgColor:    # Foreground color of marked base commit (for rebase)
+      - red
+    markedBaseCommitBgColor:    # Background color of marked base commit (for rebase)
+      - red
+    unstagedChangesColor:       # Color for file with unstaged changes
+      - red
+    defaultFgColor:             # Default text color
+      - "#C1CACF"
+
+  authorColors:
+    '*': '#babbf1'
+
+os:
+  editPreset: 'nvim'
+  openPreset: 'nvim'
+git:
+  pagers:
+    - pager: ydiff -p cat -s --wrap --width={{columnWidth}}
+      colorArg: never
+    - pager: ""
+
+customCommands:
+  - key: 'E'
+    context: 'commits'
+    description: 'Open Commit Files in Editor 1'
+    command: >
+      sh -c '
+        TMP_DIR="/tmp/commit_{{.SelectedCommit.Hash}}" &&
+        if git worktree list --porcelain | grep -Fxq "worktree $TMP_DIR"; then
+          git worktree remove --force "$TMP_DIR" 2>/dev/null || true
+        fi &&
+        git worktree prune &&
+        if [ ! -d "$TMP_DIR" ]; then
+          git worktree add --detach "$TMP_DIR" {{.SelectedCommit.Hash}}
+        fi &&
+        nvim "$TMP_DIR"
+      '
+    output: terminal
+  - key: 'E'
+    context: 'subCommits'
+    description: 'Open Commit Files in Editor 2'
+    command: >
+      sh -c '
+        TMP_DIR="/tmp/commit_{{.SelectedCommit.Hash}}" &&
+        if git worktree list --porcelain | grep -Fxq "worktree $TMP_DIR"; then
+          git worktree remove --force "$TMP_DIR" 2>/dev/null || true
+        fi &&
+        git worktree prune &&
+        if [ ! -d "$TMP_DIR" ]; then
+          git worktree add --detach "$TMP_DIR" {{.SelectedCommit.Hash}}
+        fi &&
+        nvim "$TMP_DIR"
+      '
+    output: terminal
+  - key: 'E'
+    context: 'localBranches'
+    description: 'Open Commit Files in Editor 3'
+    command: >
+      sh -c '
+        LATEST_COMMIT=$(git rev-parse {{.SelectedLocalBranch.Name}}) &&
+        TMP_DIR="/tmp/commit_$LATEST_COMMIT" &&
+        if git worktree list --porcelain | grep -Fxq "worktree $TMP_DIR"; then
+          git worktree remove --force "$TMP_DIR" 2>/dev/null || true
+        fi &&
+        git worktree prune &&
+        if [ ! -d "$TMP_DIR" ]; then
+          git worktree add --detach "$TMP_DIR" "$LATEST_COMMIT"
+        fi &&
+        nvim "$TMP_DIR"
+      '
+    output: terminal
+  - key: 'E'
+    context: 'commitFiles'
+    description: 'Open File at Commit in Editor 4'
+    command: >
+      sh -c '
+        FILE_PATH="{{.SelectedCommitFile.Name}}" &&
+        COMMIT_HASH="{{.SelectedCommit.Hash}}" &&
+        EXT="${FILE_PATH##*.}" &&
+        TEMP_FILE=$(mktemp /tmp/lazygit_file.XXXXXX).${EXT} &&
+        trap "rm -f ${TEMP_FILE}" EXIT &&
+        git show "${COMMIT_HASH}:${FILE_PATH}" > "${TEMP_FILE}" &&
+        nvim -c "setlocal buftype=nofile" -c "file ${FILE_PATH}@${COMMIT_HASH}" "${TEMP_FILE}"
+      '
+    output: terminal
+  - key: 'O'
+    context: 'commits'
+    description: 'Open Commit Files in File Explorer 1'
+    command: >
+      sh -c '
+        TMP_DIR="/tmp/commit_{{.SelectedCommit.Hash}}" &&
+        if git worktree list --porcelain | grep -Fxq "worktree $TMP_DIR"; then
+          git worktree remove --force "$TMP_DIR" 2>/dev/null || true
+        fi &&
+        git worktree prune &&
+        if [ ! -d "$TMP_DIR" ]; then
+          git worktree add --detach "$TMP_DIR" {{.SelectedCommit.Hash}}
+        fi &&
+        nohup xdg-open "$TMP_DIR" >/dev/null 2>&1 &
+      '
+    output: none
+  - key: 'O'
+    context: 'subCommits'
+    description: 'Open Commit Files in File Explorer 2'
+    command: >
+      sh -c '
+        TMP_DIR="/tmp/commit_{{.SelectedCommit.Hash}}" &&
+        if git worktree list --porcelain | grep -Fxq "worktree $TMP_DIR"; then
+          git worktree remove --force "$TMP_DIR" 2>/dev/null || true
+        fi &&
+        git worktree prune &&
+        if [ ! -d "$TMP_DIR" ]; then
+          git worktree add --detach "$TMP_DIR" {{.SelectedCommit.Hash}}
+        fi &&
+        nohup xdg-open "$TMP_DIR" >/dev/null 2>&1 &
+      '
+    output: none
+  - key: 'O'
+    context: 'localBranches'
+    description: 'Open Branch Files in File Explorer 3'
+    command: >
+      sh -c '
+        LATEST_COMMIT=$(git rev-parse {{.SelectedLocalBranch.Name}}) &&
+        TMP_DIR="/tmp/commit_$LATEST_COMMIT" &&
+        if git worktree list --porcelain | grep -Fxq "worktree $TMP_DIR"; then
+          git worktree remove --force "$TMP_DIR" 2>/dev/null || true
+        fi &&
+        git worktree prune &&
+        if [ ! -d "$TMP_DIR" ]; then
+          git worktree add --detach "$TMP_DIR" "$LATEST_COMMIT"
+        fi &&
+        nohup xdg-open "$TMP_DIR" >/dev/null 2>&1 &
+      '
+    output: none
+  - key: 'O'
+    context: 'commitFiles'
+    description: 'Open File at Commit in File Explorer 4'
+    command: >
+      sh -c '
+        FILE_PATH="{{.SelectedCommitFile.Name}}" &&
+        COMMIT_HASH="{{.SelectedCommit.Hash}}" &&
+        EXT="${FILE_PATH##*.}" &&
+        TEMP_FILE="$(mktemp /tmp/lazygit_file.XXXXXX).${EXT}" &&
+        git show "${COMMIT_HASH}:${FILE_PATH}" > "${TEMP_FILE}" &&
+        nohup dolphin --select "${TEMP_FILE}" >/dev/null 2>&1 &
+      '
+    output: none
+  - key: 'T'
+    context: 'commits'
+    description: 'Open Commit Dir in Terminal 1'
+    command: >
+      sh -c '
+        TMP_DIR="/tmp/commit_{{.SelectedCommit.Hash}}" &&
+        if git worktree list --porcelain | grep -Fxq "worktree $TMP_DIR"; then
+          git worktree remove --force "$TMP_DIR" 2>/dev/null || true
+        fi &&
+        git worktree prune &&
+        if [ ! -d "$TMP_DIR" ]; then
+          git worktree add --detach "$TMP_DIR" {{.SelectedCommit.Hash}}
+        fi &&
+        nohup $TERM --working-directory="$TMP_DIR" >/dev/null 2>&1 &
+      '
+    output: none
+  - key: 'T'
+    context: 'subCommits'
+    description: 'Open Commit Dir in Terminal 2'
+    command: >
+      sh -c '
+        TMP_DIR="/tmp/commit_{{.SelectedCommit.Hash}}" &&
+        if git worktree list --porcelain | grep -Fxq "worktree $TMP_DIR"; then
+          git worktree remove --force "$TMP_DIR" 2>/dev/null || true
+        fi &&
+        git worktree prune &&
+        if [ ! -d "$TMP_DIR" ]; then
+          git worktree add --detach "$TMP_DIR" {{.SelectedCommit.Hash}}
+        fi &&
+        nohup $TERM --working-directory="$TMP_DIR" >/dev/null 2>&1 &
+      '
+    output: none
+  - key: 'T'
+    context: 'localBranches'
+    description: 'Open Branch Dir in Terminal 3'
+    command: >
+      sh -c '
+        LATEST_COMMIT=$(git rev-parse {{.SelectedLocalBranch.Name}}) &&
+        TMP_DIR="/tmp/commit_$LATEST_COMMIT" &&
+        if git worktree list --porcelain | grep -Fxq "worktree $TMP_DIR"; then
+          git worktree remove --force "$TMP_DIR" 2>/dev/null || true
+        fi &&
+        git worktree prune &&
+        if [ ! -d "$TMP_DIR" ]; then
+          git worktree add --detach "$TMP_DIR" "$LATEST_COMMIT"
+        fi &&
+        nohup $TERM --working-directory="$TMP_DIR" >/dev/null 2>&1 &
+      '
+    output: none
+  - key: 'T'
+    context: 'commitFiles'
+    description: 'Open Commit File Dir in Terminal 4'
+    command: >
+      sh -c '
+        FILE_PATH="{{.SelectedCommitFile.Name}}" &&
+        COMMIT_HASH="{{.SelectedCommit.Hash}}" &&
+        TMP_DIR="/tmp/commit_${COMMIT_HASH}" &&
+        if git worktree list --porcelain | grep -Fxq "worktree $TMP_DIR"; then
+          git worktree remove --force "$TMP_DIR" 2>/dev/null || true
+        fi &&
+        git worktree prune &&
+        if [ ! -d "$TMP_DIR" ]; then
+          git worktree add --detach "$TMP_DIR" "$COMMIT_HASH"
+        fi &&
+        FILE_DIR="$TMP_DIR/$(dirname "$FILE_PATH")" &&
+        nohup $TERM --working-directory="$FILE_DIR" >/dev/null 2>&1 &
+      '
+    output: none
+  - key: '<c-e>'
+    description: 'Add empty commit'
+    context: 'commits'
+    loadingText: 'Committing empty commit...'
+    prompts:
+      - type: 'input'
+        title: 'Empty commit message'
+    command: 'git commit --allow-empty -m "{{index .PromptResponses 0}}"'
+
+  # retrieved from: https://github.com/jesseduffield/lazygit/wiki/Custom-Commands-Compendium#conventional-commit
+  - key: "<c-v>"
+    context: "global"
+    description: "Create new conventional commit"
+    prompts:
+      - type: "menu"
+        key: "Type"
+        title: "Type of change"
+        options:
+          - name: "build"
+            description: "Changes that affect the build system or external dependencies"
+            value: "build"
+          - name: "feat"
+            description: "A new feature"
+            value: "feat"
+          - name: "fix"
+            description: "A bug fix"
+            value: "fix"
+          - name: "chore"
+            description: "Other changes that don't modify src or test files"
+            value: "chore"
+          - name: "ci"
+            description: "Changes to CI configuration files and scripts"
+            value: "ci"
+          - name: "docs"
+            description: "Documentation only changes"
+            value: "docs"
+          - name: "perf"
+            description: "A code change that improves performance"
+            value: "perf"
+          - name: "refactor"
+            description: "A code change that neither fixes a bug nor adds a feature"
+            value: "refactor"
+          - name: "revert"
+            description: "Reverts a previous commit"
+            value: "revert"
+          - name: "style"
+            description: "Changes that do not affect the meaning of the code"
+            value: "style"
+          - name: "test"
+            description: "Adding missing tests or correcting existing tests"
+            value: "test"
+      - type: "input"
+        title: "Scope"
+        key: "Scope"
+        initialValue: ""
+      - type: "menu"
+        key: "Breaking"
+        title: "Breaking change"
+        options:
+          - name: "no"
+            value: ""
+          - name: "yes"
+            value: "!"
+      - type: "input"
+        title: "message"
+        key: "Message"
+        initialValue: ""
+      - type: "confirm"
+        key: "Confirm"
+        title: "Commit"
+        body: "Are you sure you want to commit?"
+    command: "git commit --message '{{.Form.Type}}{{ if .Form.Scope }}({{ .Form.Scope }}){{ end }}{{.Form.Breaking}}: {{.Form.Message}}'"
+    loadingText: "Creating conventional commit..."
+  - key: '<c-c>'
+    description: 'commit as non-default author'
+    command: 'git commit -m "{{index .PromptResponses 0}}" --author="{{index .PromptResponses 1}} <{{index .PromptResponses 2}}>"'
+    context: 'files'
+    prompts:
+      - type: 'input'
+        title: 'Commit Message'
+        initialValue: ''
+      - type: 'input'
+        title: 'Author Name'
+        initialValue: ''
+      - type: 'input'
+        title: 'Email Address'
+        initialValue: ''
+    loadingText: 'commiting'
+  - key: '<c-u>'
+    context: 'files'
+    description: 'Copy unstaged changes to clipboard'
+    loadingText: 'Copying unstaged changes...'
+    output: popup
+    outputTitle: copy to clipboard
+    command: >
+      git diff | xsel --clipboard --input && echo "Unstaged changes copied to clipboard."
+  - key: '<c-s>'
+    context: 'files'
+    description: 'Copy staged changes to clipboard'
+    loadingText: 'Copying staged changes...'
+    output: popup
+    outputTitle: copy to clipboard
+    command: >
+      git diff --cached --no-ext-diff | xsel --clipboard --input && echo "Staged changes copied to clipboard."
+  - key: '<c-p>'
+    context: 'files'
+    description: 'Paste patch from clipboard to unstage 1'
+    loadingText: 'Unstaging patch from clipboard...'
+    output: popup
+    outputTitle: unstage patch
+    command: >
+      sh -c 'tmp="$(mktemp)"; xsel --clipboard --output > "$tmp" && git apply --3way --index -p1 --verbose "$tmp"; code=$?; rm -f "$tmp"; exit $code'
+  - key: 'S'
+    description: 'Squash merge with theirs strategy'
+    context: 'localBranches'
+    command: 'git merge --squash -X theirs {{.SelectedLocalBranch.Name | quote}}'
+    loadingText: 'Squash merging with theirs'
+    after:
+      checkForConflicts: true
+  - key: '<c-r>'
+    context: 'localBranches'
+    description: 'Restore files from branch 1'
+    loadingText: 'Restoring files from branch...'
+    prompts:
+      - type: 'confirm'
+        title: 'Restore files'
+        body: '{{.SelectedLocalBranch.Name}} into {{.CheckedOutBranch.Name}}'
+    command: >
+      sh -c '
+        CURRENT_BRANCH=$(git branch --show-current) &&
+        SOURCE_BRANCH={{.SelectedLocalBranch.Name | quote}} &&
+        [ -n "$CURRENT_BRANCH" ] &&
+        [ "$CURRENT_BRANCH" != "$SOURCE_BRANCH" ] &&
+        git restore --source "$SOURCE_BRANCH" -- .
+      '
+    output: none
+  - key: '<c-n>'
+    context: 'localBranches'
+    description: 'Create Empty Orphan Branch'
+    loadingText: 'Creating empty branch...'
+    prompts:
+      - type: 'input'
+        title: 'New empty branch name'
+    command: >
+      sh -c '
+        RAW_BRANCH="{{index .PromptResponses 0}}" &&
+        BRANCH=$(printf "%s" "$RAW_BRANCH" | tr -s "[:space:]" "-") &&
+        while [ "${BRANCH#-}" != "$BRANCH" ]; do BRANCH="${BRANCH#-}"; done &&
+        while [ "${BRANCH%-}" != "$BRANCH" ]; do BRANCH="${BRANCH%-}"; done &&
+        [ -n "$BRANCH" ] &&
+        git check-ref-format --branch "$BRANCH" &&
+        (git switch --orphan "$BRANCH" || git checkout --orphan "$BRANCH") &&
+        (git rm -rf . 2>/dev/null || true) &&
+        git commit --allow-empty -m "First Commit"
+      '
