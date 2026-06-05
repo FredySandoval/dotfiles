@@ -386,6 +386,7 @@ do
         vim.api.nvim_set_hl(0, 'LspReferenceText',  { bg = '#72393D' })                    -- red    text
         vim.api.nvim_set_hl(0, 'LspReferenceRead',  { bg = '#395F77' })                    -- blue   read
         vim.api.nvim_set_hl(0, 'LspReferenceWrite', { bg = '#74612D', underline = false }) -- yellow write
+        vim.api.nvim_set_hl(0, 'LspReferenceTarget',{ bg = '#30972B' })
 
         local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
 
