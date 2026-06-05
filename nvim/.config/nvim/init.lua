@@ -300,7 +300,7 @@ do
   })
 
 
-  vim.api.nvim_set_hl(0, 'Normal',       { bg = '#1d1f23' })     -- main editor background
+  vim.api.nvim_set_hl(0, 'Normal',       { bg = '#1D1F23' })     -- main editor background
   vim.api.nvim_set_hl(0, 'NormalNC',     { bg = '#000000' })     -- inactive windows
   vim.api.nvim_set_hl(0, 'NormalFloat',  { bg = '#000000' })     -- floating windows
   vim.api.nvim_set_hl(0, 'FloatBorder',  { bg = '#000000' })     -- float borders
@@ -370,26 +370,25 @@ do
         vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
       end
 
-      -- Rename the variable under your cursor.
-      --  Most Language Servers support renaming across files, etc.
-      map('grn', vim.lsp.buf.rename, '[R]e[n]ame')
+      map('gd',  vim.lsp.buf.definition,  '[g]oto [d]efinition')                      -- Jump to the definition of the symbol under your cursor.
+      map('gD',  vim.lsp.buf.declaration, '[g]oto [D]eclaration')                     -- WARN: This is not Goto Definition, this is Goto Declaration.
+      map('grn', vim.lsp.buf.rename,      '[g]oto [r]e[n]ame')                        -- Rename the variable under your cursor.
+      map('gra', vim.lsp.buf.code_action, '[g]oto [r]efactor [action]', { 'n', 'x' }) -- Execute a code action, usually your cursor needs to be on top of an error
+      map('K',   vim.lsp.buf.hover,       '[K] Show hover documentation')
 
-      -- Execute a code action, usually your cursor needs to be on top of an error
-      -- or a suggestion from your LSP for this to activate.
-      map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
+      -- Highlight references of the word under your cursor.
+      -- Put this inside your LspAttach callback.
 
-      -- WARN: This is not Goto Definition, this is Goto Declaration.
-      --  For example, in C this would take you to the header.
-      map('grD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
-
-      -- The following two autocommands are used to highlight references of the
-      -- word under your cursor when your cursor rests there for a little while.
-      --    See `:help CursorHold` for information about when this is executed
-      --
-      -- When you move your cursor, the highlights will be cleared (the second autocommand).
       local client = vim.lsp.get_client_by_id(event.data.client_id)
+
       if client and client:supports_method('textDocument/documentHighlight', event.buf) then
+        -- Customize the highlight colors used by vim.lsp.buf.document_highlight()
+        vim.api.nvim_set_hl(0, 'LspReferenceText',  { bg = '#72393D' })                    -- red    text
+        vim.api.nvim_set_hl(0, 'LspReferenceRead',  { bg = '#395F77' })                    -- blue   read
+        vim.api.nvim_set_hl(0, 'LspReferenceWrite', { bg = '#74612D', underline = false }) -- yellow write
+
         local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
+
         vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
           buffer = event.buf,
           group = highlight_augroup,
@@ -403,10 +402,15 @@ do
         })
 
         vim.api.nvim_create_autocmd('LspDetach', {
-          group = vim.api.nvim_create_augroup('kickstart-lsp-detach', { clear = true }),
+          group = vim.api.nvim_create_augroup('kickstart-lsp-detach', {
+            clear = true,
+          }),
           callback = function(event2)
             vim.lsp.buf.clear_references()
-            vim.api.nvim_clear_autocmds { group = 'kickstart-lsp-highlight', buffer = event2.buf }
+            vim.api.nvim_clear_autocmds {
+              group = 'kickstart-lsp-highlight',
+              buffer = event2.buf,
+            }
           end,
         })
       end
