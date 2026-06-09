@@ -18,11 +18,15 @@ do
     vim.cmd("startinsert")
   end, { desc = "Open terminal at bottom" })
 
-local netrw_picker_group = vim.api.nvim_create_augroup("BottomNetrwPicker", {
-  clear = true,
-})
 
+local netrw_picker_group = vim.api.nvim_create_augroup("NetrwPicker", { clear = true })
 vim.keymap.set("n", "<leader>e", function()
+  -- If already inside netrw, close it with the same command
+  if vim.bo.filetype == "netrw" then
+    vim.cmd("close")
+    return
+  end
+
   vim.g.netrw_browse_split = 0
   vim.g.netrw_fastbrowse = 0
 
@@ -91,11 +95,9 @@ vim.keymap.set("n", "<leader>e", function()
       end
     end,
   })
-end, { desc = "Open file explorer at bottom" })
+end, { desc = "Toggle file explorer at bottom" })
 
 -- fpaste
-
-
    -- Automatically detect files changed outside Neovim.
    -- `autoread` allows clean buffers to reload from disk, while `checktime`
    -- asks Neovim to check for external changes when focus/buffer/cursor events happen.
@@ -330,12 +332,7 @@ do
     },
   }
 
-  vim.pack.add {
-    {
-        src = gh 'Vonr/align.nvim',
-        branch = "v2",
-    }
-  }
+  vim.pack.add { { src = gh 'Vonr/align.nvim', branch = "v2", } }
 
   -- [[ Colorscheme ]]
   -- You can easily change to a different colorscheme.
@@ -350,11 +347,32 @@ do
       comments = { italic = false }, -- Disable italics in comments
     },
   }
-
   -- Load the colorscheme here.
   -- Like many other themes, this one has different styles, and you could load
   -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
   vim.cmd.colorscheme 'vscode'
+
+  -- [[ mini.ai ]]
+  -- Better Around/Inside textobjects
+  vim.pack.add { gh 'nvim-mini/mini.ai' }
+  local ai = require('mini.ai')
+  ai.setup {
+    -- Avoid conflicts with built-in incremental selection mappings on Neovim >= 0.12
+    mappings = {
+      around_next = 'aa',
+      inside_next = 'ii',
+    },
+
+    n_lines = 500,
+
+    custom_textobjects = {
+      -- Function definition via Treesitter
+      f = ai.gen_spec.treesitter {
+        a = '@function.outer',
+        i = '@function.inner',
+      },
+    },
+  }
 
   -- Dim comments only; keep the rest of the vscode colorscheme unchanged.
   -- Tree-sitter/LSP can use their own comment highlight groups, so override those too.
