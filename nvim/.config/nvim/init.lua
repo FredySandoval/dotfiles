@@ -3,11 +3,119 @@
 -- Core Neovim settings, leaders, options, basic keymaps, basic autocmds
 -- ========================================================================
 do
-  vim.opt.autoread = true
-  vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI" }, {
-    pattern = "*",
-    command = "checktime",
+
+  vim.g.mapleader      = ' '   -- Set <space> as the leader key
+  vim.g.maplocalleader = ' '   -- See `:help mapleader`
+                               -- NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
+  vim.opt.wrap          = false
+  vim.opt.sidescroll    = 1
+  vim.opt.sidescrolloff = 20 -- when scroll to the right
+  vim.o.cmdwinheight    = 20 -- bottom buffer when q:
+
+  vim.keymap.set("n", "<leader>t", function()
+    vim.cmd("botright split")
+    vim.cmd("terminal")
+    vim.cmd("startinsert")
+  end, { desc = "Open terminal at bottom" })
+
+local netrw_picker_group = vim.api.nvim_create_augroup("BottomNetrwPicker", {
+  clear = true,
+})
+
+vim.keymap.set("n", "<leader>e", function()
+  vim.g.netrw_browse_split = 0
+  vim.g.netrw_fastbrowse = 0
+
+  local prev_win = vim.api.nvim_get_current_win()
+
+  vim.cmd("botright split")
+  vim.cmd("Explore")
+
+  local netrw_win = vim.api.nvim_get_current_win()
+
+  local function fix_netrw_height()
+    if vim.api.nvim_win_is_valid(netrw_win) then
+      vim.api.nvim_win_set_height(netrw_win, 20)
+    end
+  end
+
+  local function set_netrw_keymaps(buf)
+    vim.keymap.set("n", "<CR>", function()
+      local file = vim.fn.expand("<cfile>")
+      if file == "" then
+        return
+      end
+
+      local dir = vim.b.netrw_curdir or vim.fn.getcwd()
+      local fullpath = vim.fn.fnamemodify(dir .. "/" .. file, ":p")
+
+      if vim.fn.isdirectory(fullpath) == 1 then
+        vim.cmd("Explore " .. vim.fn.fnameescape(fullpath))
+        vim.schedule(fix_netrw_height)
+        return
+      end
+
+      if vim.api.nvim_win_is_valid(netrw_win) then
+        vim.api.nvim_win_close(netrw_win, true)
+      end
+
+      if vim.api.nvim_win_is_valid(prev_win) then
+        vim.api.nvim_set_current_win(prev_win)
+        vim.cmd("edit " .. vim.fn.fnameescape(fullpath))
+      end
+    end, {
+      buffer = buf,
+      desc = "Pick file and close bottom netrw",
+    })
+  end
+
+  fix_netrw_height()
+  set_netrw_keymaps(vim.api.nvim_get_current_buf())
+
+  vim.api.nvim_create_autocmd("FileType", {
+    group = netrw_picker_group,
+    pattern = "netrw",
+    callback = function(args)
+      if vim.api.nvim_get_current_win() == netrw_win then
+        set_netrw_keymaps(args.buf)
+        vim.schedule(fix_netrw_height)
+      end
+    end,
   })
+
+  vim.api.nvim_create_autocmd({ "BufEnter", "WinEnter" }, {
+    group = netrw_picker_group,
+    callback = function()
+      if vim.api.nvim_get_current_win() == netrw_win then
+        vim.schedule(fix_netrw_height)
+      end
+    end,
+  })
+end, { desc = "Open file explorer at bottom" })
+
+-- fpaste
+
+
+   -- Automatically detect files changed outside Neovim.
+   -- `autoread` allows clean buffers to reload from disk, while `checktime`
+   -- asks Neovim to check for external changes when focus/buffer/cursor events happen.
+   -- Guard `getcmdwintype()` because `checktime` is invalid inside the command-line
+   -- window opened by q:, q/, or q?.
+  vim.opt.autoread = true
+   vim.api.nvim_create_autocmd(
+    {
+      "FocusGained", "BufEnter", "CursorHold", "CursorHoldI" },
+    {
+      group    = vim.api.nvim_create_augroup("AutoChecktime", { clear = true }),
+      pattern  = "*",
+      callback = function()
+        if vim.fn.getcmdwintype() == "" then
+          vim.cmd("checktime")
+        end
+      end,
+    }
+  )
+
   vim.opt.guicursor = {        -- Set cursor shape by mode:
     "n-v-c:block",             -- normal/visual/command                = █
     "i-ci-ve:ver25",           -- insert/command-insert/visual-exclude = ▏
@@ -22,9 +130,6 @@ do
   vim.loader.enable()          -- Enable faster startup by caching compiled Lua modules
 
 
-  vim.g.mapleader      = ' '   -- Set <space> as the leader key
-  vim.g.maplocalleader = ' '   -- See `:help mapleader`
-                               -- NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 
   vim.g.have_nerd_font = false -- Set to true if you have a Nerd Font installed and selected in the terminal
 
@@ -276,13 +381,13 @@ do
   local function soft_diagnostic_underlines()
     -- Soft diagnostic underline colors. `sp` controls underline/undercurl color.
     vim.api.nvim_set_hl(0, 'DiagnosticUnderlineError', { undercurl = true, sp = '#9c3638' })
-    vim.api.nvim_set_hl(0, 'DiagnosticUnderlineWarn',  { undercurl = true, sp = '#d7ba7d' })
+    vim.api.nvim_set_hl(0, 'DiagnosticUnderlineWarn',  { undercurl = true, sp = '#a69063' })
     vim.api.nvim_set_hl(0, 'DiagnosticUnderlineInfo',  { undercurl = true, sp = '#75beff' })
     vim.api.nvim_set_hl(0, 'DiagnosticUnderlineHint',  { undercurl = true, sp = '#8fbc8f' })
 
 
     vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextError', { fg = '#693738', bg = 'NONE' })
-    vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextWarn',  { fg = '#d7ba7d', bg = 'NONE' })
+    vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextWarn',  { fg = '#a69063', bg = 'NONE' })
     vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextInfo',  { fg = '#75beff', bg = 'NONE' })
     vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextHint',  { fg = '#8fbc8f', bg = 'NONE' })
   end
@@ -301,7 +406,7 @@ do
 
 
   vim.api.nvim_set_hl(0, 'Normal',       { bg = '#1D1F23' })     -- main editor background
-  vim.api.nvim_set_hl(0, 'NormalNC',     { bg = '#000000' })     -- inactive windows
+  vim.api.nvim_set_hl(0, 'NormalNC',     { bg = '#272727' })     -- inactive windows
   vim.api.nvim_set_hl(0, 'NormalFloat',  { bg = '#000000' })     -- floating windows
   vim.api.nvim_set_hl(0, 'FloatBorder',  { bg = '#000000' })     -- float borders
   vim.api.nvim_set_hl(0, 'SignColumn',   { bg = '#1d1f23' })     -- gutter/sign column
@@ -420,9 +525,9 @@ do
       -- code, if the language server you are using supports them
       --
       -- This may be unwanted, since they displace some of your code
-      if client and client:supports_method('textDocument/inlayHint', event.buf) then
-        map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
-      end
+      -- if client and client:supports_method('textDocument/inlayHint', event.buf) then
+      --   map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
+      -- end
     end,
   })
 
@@ -431,10 +536,10 @@ do
   --  See `:help lsp-config` for information about keys and how to configure
   ---@type table<string, vim.lsp.Config>
   local servers = {
-    -- clangd = {},
-    -- gopls = {},
+    clangd = {},
+    gopls = {},
     pyright = {},
-    -- rust_analyzer = {},
+    rust_analyzer = {},
     --
     -- Some languages (like typescript) have entire language plugins that can be useful:
     --    https://github.com/pmizio/typescript-tools.nvim
@@ -510,6 +615,87 @@ do
   end
 end
 
+-- ============================================================
+-- SECTION 7: AUTOCOMPLETE & SNIPPETS
+-- blink.cmp and luasnip setup
+-- ============================================================
+do
+  -- [[ Snippet Engine ]]
+
+  -- NOTE: You can also specify plugin using a version range for its git tag.
+  --  See `:help vim.version.range()` for more info
+  vim.pack.add { { src = gh 'L3MON4D3/LuaSnip', version = vim.version.range '2.*' } }
+  require('luasnip').setup {}
+
+  -- `friendly-snippets` contains a variety of premade snippets.
+  --    See the README about individual language/framework/plugin snippets:
+  --    https://github.com/rafamadriz/friendly-snippets
+  --
+  -- vim.pack.add { gh 'rafamadriz/friendly-snippets' }
+  -- require('luasnip.loaders.from_vscode').lazy_load()
+
+  -- [[ Autocomplete Engine ]]
+  vim.pack.add { { src = gh 'saghen/blink.cmp', version = vim.version.range '1.*' } }
+  require('blink.cmp').setup {
+    keymap = {
+      -- 'default' (recommended) for mappings similar to built-in completions
+      --   <c-y> to accept ([y]es) the completion.
+      --    This will auto-import if your LSP supports it.
+      --    This will expand snippets if the LSP sent a snippet.
+      -- 'super-tab' for tab to accept
+      -- 'enter' for enter to accept
+      -- 'none' for no mappings
+      --
+      -- For an understanding of why the 'default' preset is recommended,
+      -- you will need to read `:help ins-completion`
+      --
+      -- No, but seriously. Please read `:help ins-completion`, it is really good!
+      --
+      -- All presets have the following mappings:
+      -- <tab>/<s-tab>: move to right/left of your snippet expansion
+      -- <c-space>: Open menu or open docs if already open
+      -- <c-n>/<c-p> or <up>/<down>: Select next/previous item
+      -- <c-e>: Hide menu
+      -- <c-k>: Toggle signature help
+      --
+      -- See `:help blink-cmp-config-keymap` for defining your own keymap
+      preset = 'default',
+
+      -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
+      --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
+    },
+
+    appearance = {
+      -- 'mono' (default) for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
+      -- Adjusts spacing to ensure icons are aligned
+      nerd_font_variant = 'mono',
+    },
+
+    completion = {
+      -- By default, you may press `<c-space>` to show the documentation.
+      -- Optionally, set `auto_show = true` to show the documentation after a delay.
+      documentation = { auto_show = false, auto_show_delay_ms = 500 },
+    },
+
+    sources = {
+      default = { 'lsp', 'path', 'snippets' },
+    },
+
+    snippets = { preset = 'luasnip' },
+
+    -- Blink.cmp includes an optional, recommended rust fuzzy matcher,
+    -- which automatically downloads a prebuilt binary when enabled.
+    --
+    -- By default, we use the Lua implementation instead, but you may enable
+    -- the rust implementation via `'prefer_rust_with_warning'`
+    --
+    -- See `:help blink-cmp-config-fuzzy` for more information
+    fuzzy = { implementation = 'lua' },
+
+    -- Shows a signature help window while you type arguments for a function
+    signature = { enabled = true },
+  }
+end
 
 -- ============================================================
 -- SECTION 8: TREESITTER
