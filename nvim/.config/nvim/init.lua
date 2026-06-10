@@ -373,6 +373,15 @@ do
       },
     },
   }
+  local map = function(keys, func, desc, mode)
+    mode = mode or 'n'
+    vim.keymap.set(mode, keys, func, { desc = desc })
+  end
+  map(']m', function() ai.move_cursor('right', 'a', 'f', { search_method = 'next' }) end, 'Mini.ai: Next function start')
+  map('[m', function() ai.move_cursor('left' , 'a', 'f', { search_method = 'prev' }) end, 'Mini.ai: Previous function start')
+  map(']M', function() ai.move_cursor('right', 'a', 'f', { search_method = 'next' }) end, 'Mini.ai: Next function end')
+  map('[M', function() ai.move_cursor('left' , 'a', 'f', { search_method = 'prev' }) end, 'Mini.ai: Previous function end')
+
 
   -- Dim comments only; keep the rest of the vscode colorscheme unchanged.
   -- Tree-sitter/LSP can use their own comment highlight groups, so override those too.
@@ -727,6 +736,7 @@ do
 
   -- NOTE: You can also specify a branch or a specific commit
   vim.pack.add { { src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' } }
+  vim.pack.add { { src = 'https://github.com/nvim-treesitter/nvim-treesitter-textobjects' } }
 
   -- Ensure basic parsers are installed
   local parsers = {'javascript', 'typescript', 'go', 'rust', 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
