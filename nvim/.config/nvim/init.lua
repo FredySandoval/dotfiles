@@ -3,7 +3,6 @@
 -- Core Neovim settings, leaders, options, basic keymaps, basic autocmds
 -- ========================================================================
 do
-
   vim.g.mapleader      = ' '   -- Set <space> as the leader key
   vim.g.maplocalleader = ' '   -- See `:help mapleader`
                                -- NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
@@ -11,7 +10,6 @@ do
   vim.opt.sidescroll    = 1
   vim.opt.sidescrolloff = 20 -- when scroll to the right
   vim.o.cmdwinheight    = 20 -- bottom buffer when q:
-
 
 
   ------------------------------------------------------
@@ -118,7 +116,7 @@ do
     end,
   })
 end, { desc = "Toggle file explorer at bottom" })
-
+------------------------------------------------------
 -- fpaste
    -- Automatically detect files changed outside Neovim.
    -- `autoread` allows clean buffers to reload from disk, while `checktime`
@@ -636,7 +634,10 @@ do
     gh 'mason-org/mason.nvim',
     gh 'mason-org/mason-lspconfig.nvim',
     gh 'WhoIsSethDaniel/mason-tool-installer.nvim',
+    { src = gh 'saghen/blink.cmp', version = vim.version.range 'v1.*' },
   }
+
+  local capabilities = require('blink.cmp').get_lsp_capabilities()
 
   -- Automatically install LSPs and related tools to stdpath for Neovim
   require('mason').setup {}
@@ -657,6 +658,7 @@ do
   require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
   for name, server in pairs(servers) do
+    server.capabilities = server.capabilities or capabilities
     vim.lsp.config(name, server)
     vim.lsp.enable(name)
   end
@@ -682,7 +684,6 @@ do
   require('luasnip.loaders.from_vscode').lazy_load()
 
   -- [[ Autocomplete Engine ]]
-  vim.pack.add { { src = gh 'saghen/blink.cmp', version = vim.version.range 'v1.*' } }
   require('blink.cmp').setup {
     fuzzy = { implementation = 'rust' },
     keymap = {
@@ -716,11 +717,6 @@ do
       --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
     },
 
-    appearance = {
-      -- 'mono' (default) for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
-      -- Adjusts spacing to ensure icons are aligned
-      nerd_font_variant = 'normal',
-    },
     completion = {
       -- By default, you may press `<c-space>` to show the documentation.
       -- Optionally, set `auto_show = true` to show the documentation after a delay.
@@ -732,9 +728,22 @@ do
     },
 
     sources = {
-      default = { 'lsp', 'path', 'snippets' },
+      default = { 'lsp', 'path', 'buffer', 'snippets' },
+      providers = {
+        lsp = {
+          opts = {
+            tailwind_color_icon = "█"
+          }
+        }
+      }
     },
 
+    appearance = {
+      -- 'mono' (default) for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
+      -- Adjusts spacing to ensure icons are aligned
+      use_nvim_cmp_as_default = false,
+      nerd_font_variant = 'mono',
+    },
     snippets = { preset = 'luasnip' },
 
     -- Blink.cmp includes an optional, recommended rust fuzzy matcher,
@@ -748,6 +757,7 @@ do
     -- Shows a signature help window while you type arguments for a function
     signature = { enabled = true },
   }
+  require("luasnip.loaders.from_vscode").lazy_load()
 end
 
 -- ============================================================
