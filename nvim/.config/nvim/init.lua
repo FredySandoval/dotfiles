@@ -12,15 +12,37 @@ do
   vim.opt.sidescrolloff = 20 -- when scroll to the right
   vim.o.cmdwinheight    = 20 -- bottom buffer when q:
 
+
+
+  ------------------------------------------------------
   vim.keymap.set("n", "<leader>t", function()
-    vim.cmd("botright split")
+    vim.cmd("split")
     vim.cmd("terminal")
     vim.cmd("startinsert")
-  end, { desc = "Open terminal at bottom" })
+  end, { desc = "Open terminal" })
 
+  vim.keymap.set("n", "<leader>pi", function()
+    vim.cmd("rightbelow vsplit")
+    vim.cmd("terminal")
+    local job_id = vim.b.terminal_job_id
+    vim.fn.chansend(job_id, "pi\n")
+    vim.cmd("startinsert")
+  end, { desc = "Open terminal on right and run pi" })
+  ------------------------------------------------------
 
-local netrw_picker_group = vim.api.nvim_create_augroup("NetrwPicker", { clear = true })
-vim.keymap.set("n", "<leader>e", function()
+  vim.api.nvim_create_user_command("Reload", function()
+    vim.cmd("silent update")
+    local ok, err = pcall(dofile, vim.env.MYVIMRC)
+    if ok then
+      vim.notify("Reloaded init.lua", vim.log.levels.INFO)
+    else
+      vim.notify("Reload failed: " .. err, vim.log.levels.ERROR)
+    end
+  end, {})
+  ------------------------------------------------------
+
+  local netrw_picker_group = vim.api.nvim_create_augroup("NetrwPicker", { clear = true })
+  vim.keymap.set("n", "<leader>e", function()
   -- If already inside netrw, close it with the same command
   if vim.bo.filetype == "netrw" then
     vim.cmd("close")
@@ -431,7 +453,6 @@ do
     callback = apply_theme_overrides,
   })
 
-
   vim.api.nvim_set_hl(0, 'Normal',       { bg = '#1D1F23' })     -- main editor background
   vim.api.nvim_set_hl(0, 'NormalNC',     { bg = '#272727' })     -- inactive windows
   vim.api.nvim_set_hl(0, 'NormalFloat',  { bg = '#000000' })     -- floating windows
@@ -444,11 +465,10 @@ do
   vim.api.nvim_set_hl(0, 'StatusLineNC', { bg = '#000000' })     -- inactive statusline
   vim.api.nvim_set_hl(0, 'WinSeparator', { bg = '#000000' })     -- window separators
   vim.api.nvim_set_hl(0, 'Pmenu',        { bg = '#000000' })     -- completion menu
-  vim.api.nvim_set_hl(0, 'PmenuSel',     { bg = '#000000' })     -- selected completion item
+  vim.api.nvim_set_hl(0, 'PmenuSel',     { bg = '#272727' })     -- selected completion item
   vim.api.nvim_set_hl(0, 'TabLine',      { bg = '#000000' })     -- tabline
   vim.api.nvim_set_hl(0, 'TabLineSel',   { bg = '#000000' })     -- selected tab
   vim.api.nvim_set_hl(0, 'EndOfBuffer',  { bg = '#1d1f23' })     -- `~` empty buffer area
-
 end
 
 -- ============================================================
@@ -658,12 +678,13 @@ do
   --    See the README about individual language/framework/plugin snippets:
   --    https://github.com/rafamadriz/friendly-snippets
   --
-  -- vim.pack.add { gh 'rafamadriz/friendly-snippets' }
-  -- require('luasnip.loaders.from_vscode').lazy_load()
+  vim.pack.add { gh 'rafamadriz/friendly-snippets' }
+  require('luasnip.loaders.from_vscode').lazy_load()
 
   -- [[ Autocomplete Engine ]]
-  vim.pack.add { { src = gh 'saghen/blink.cmp', version = vim.version.range '1.*' } }
+  vim.pack.add { { src = gh 'saghen/blink.cmp', version = vim.version.range 'v1.*' } }
   require('blink.cmp').setup {
+    fuzzy = { implementation = 'rust' },
     keymap = {
       -- 'default' (recommended) for mappings similar to built-in completions
       --   <c-y> to accept ([y]es) the completion.
@@ -686,6 +707,9 @@ do
       -- <c-k>: Toggle signature help
       --
       -- See `:help blink-cmp-config-keymap` for defining your own keymap
+      -- ctrl y   : accept
+      -- ctrl n p : up and down
+      -- ctrl e   : cancel
       preset = 'default',
 
       -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
@@ -695,13 +719,16 @@ do
     appearance = {
       -- 'mono' (default) for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
       -- Adjusts spacing to ensure icons are aligned
-      nerd_font_variant = 'mono',
+      nerd_font_variant = 'normal',
     },
-
     completion = {
       -- By default, you may press `<c-space>` to show the documentation.
       -- Optionally, set `auto_show = true` to show the documentation after a delay.
-      documentation = { auto_show = false, auto_show_delay_ms = 500 },
+      menu          = { auto_show     = true },
+      documentation = { auto_show     = true },
+      ghost_text    = { enabled       = false, show_with_menu = false },
+      accept        = { auto_brackets = { enabled = true } },
+
     },
 
     sources = {
@@ -717,7 +744,6 @@ do
     -- the rust implementation via `'prefer_rust_with_warning'`
     --
     -- See `:help blink-cmp-config-fuzzy` for more information
-    fuzzy = { implementation = 'lua' },
 
     -- Shows a signature help window while you type arguments for a function
     signature = { enabled = true },
