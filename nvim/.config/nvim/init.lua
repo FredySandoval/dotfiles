@@ -224,6 +224,11 @@ end, { desc = "Toggle file explorer at bottom" })
   vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
   vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+  vim.keymap.set("t", "<C-h>", [[<C-\><C-n><C-w>h]])
+  vim.keymap.set("t", "<C-j>", [[<C-\><C-n><C-w>j]])
+  vim.keymap.set("t", "<C-k>", [[<C-\><C-n><C-w>k]])
+  vim.keymap.set("t", "<C-l>", [[<C-\><C-n><C-w>l]])
+
   -- Highlight when yanking (copying) text
   --  Try it with `yap` in normal mode
   --  See `:help vim.hl.on_yank()`
@@ -352,7 +357,6 @@ do
     },
   }
 
-  vim.pack.add { { src = gh 'Vonr/align.nvim', branch = "v2", } }
 
   -- [[ Colorscheme ]]
   -- You can easily change to a different colorscheme.
@@ -465,8 +469,8 @@ do
   vim.api.nvim_set_hl(0, 'Pmenu',        { bg = '#000000' })     -- completion menu
   vim.api.nvim_set_hl(0, 'PmenuSel',     { bg = '#272727' })     -- selected completion item
   vim.api.nvim_set_hl(0, 'TabLine',      { bg = '#000000' })     -- tabline
-  vim.api.nvim_set_hl(0, 'TabLineSel',   { bg = '#000000' })     -- selected tab
   vim.api.nvim_set_hl(0, 'EndOfBuffer',  { bg = '#1d1f23' })     -- `~` empty buffer area
+  vim.api.nvim_set_hl(0, "TabLineSel", { bold = true, bg = "#3b4252", fg = "#ffffff", })
 end
 
 -- ============================================================
@@ -525,6 +529,7 @@ do
       map('grn', vim.lsp.buf.rename,      '[g]oto [r]e[n]ame')                        -- Rename the variable under your cursor.
       map('gra', vim.lsp.buf.code_action, '[g]oto [r]efactor [action]', { 'n', 'x' }) -- Execute a code action, usually your cursor needs to be on top of an error
       map('K',   vim.lsp.buf.hover,       '[K] Show hover documentation')
+      map('gh', vim.diagnostic.open_float, 'Show line diagnostic')
 
       -- Highlight references of the word under your cursor.
       -- Put this inside your LspAttach callback.
@@ -824,9 +829,32 @@ do
 end
 
 
+
+
+
+-- ============================================================
+-- SECTION 9: OPTIONAL EXAMPLES / NEXT STEPS
+-- kickstart.plugins.* examples
+-- ============================================================
+do
+  require('variable_spotlight').setup()
+end
+
+vim.api.nvim_set_hl(0, "Visual", {
+  fg = "#ffffff", -- selected text color
+  bg = "#3297FD", -- selected background color
+})
+
+-- autopairs
+-- https://github.com/windwp/nvim-autopairs
+
+vim.pack.add { gh '/windwp/nvim-autopairs' }
+require('nvim-autopairs').setup {}
+
+
+-- A minimal plugin for NeoVim for aligning lines
+vim.pack.add { { src = gh 'Vonr/align.nvim', branch = "v2", } }
 local NS = { noremap = true, silent = true }
-
-
 -- Aligns to a string with previews
 vim.keymap.set(
     'x',
@@ -868,22 +896,3 @@ vim.keymap.set(
     end,
     NS
 )
-
--- ============================================================
--- SECTION 9: OPTIONAL EXAMPLES / NEXT STEPS
--- kickstart.plugins.* examples
--- ============================================================
-do
-  require('variable_spotlight').setup()
-end
-
-vim.api.nvim_set_hl(0, "Visual", {
-  fg = "#ffffff", -- selected text color
-  bg = "#3297FD", -- selected background color
-})
-
--- autopairs
--- https://github.com/windwp/nvim-autopairs
-
-vim.pack.add { 'https://github.com/windwp/nvim-autopairs' }
-require('nvim-autopairs').setup {}
