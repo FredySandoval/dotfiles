@@ -11,6 +11,7 @@ dolphin   \
 tmux      \
 starship  \
 stow      \
+zig       \
 
 paru -S --needed --noconfirm --removemake neovim-nightly google-chrome
 
