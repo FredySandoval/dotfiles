@@ -144,9 +144,9 @@ end, { desc = "Toggle file explorer at bottom" })
     "r-cr:hor20",              -- replace/command-replace              = ▁
     "o:hor50",                 -- operator-pending                     = _
   }
-  vim.o.tabstop     = 2        -- how wide a real tab character appears
-  vim.o.shiftwidth  = 2        -- how many spaces indentation uses
-  vim.o.softtabstop = 2        -- how many spaces Tab/Backspace feels like while editing
+  vim.o.tabstop     = 4        -- how wide a real tab character appears
+  vim.o.shiftwidth  = 4        -- how many spaces indentation uses
+  vim.o.softtabstop = 4        -- how many spaces Tab/Backspace feels like while editing
   vim.o.expandtab   = true     -- pressing Tab inserts spaces instead of a real tab character
 
   vim.loader.enable()          -- Enable faster startup by caching compiled Lua modules
