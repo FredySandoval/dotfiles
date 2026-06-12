@@ -31,6 +31,11 @@ key    = "N"
 mods   = "Control|Shift"
 action = "SpawnNewInstance"
 
+[[keyboard.bindings]]               # Send correct secuence on shift enter for tmux
+key    = "Return"
+mods   = "Shift"
+chars  = "\u001b[13;2u"
+
 [colors.primary]
 foreground = '#b4b4bf'
 background = '#1d1f23'
