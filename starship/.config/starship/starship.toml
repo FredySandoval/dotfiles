@@ -41,9 +41,9 @@ deleted    = '\[deleted ${count}\]'
 
 [directory]
 use_logical_path          = true
-truncation_length         = 30
+truncation_length         = 50
 disabled                  = false
-fish_style_pwd_dir_length = 30
+fish_style_pwd_dir_length = 50
 
 [rust]
 symbol = 'Rust  '
