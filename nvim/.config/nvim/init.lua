@@ -3,15 +3,17 @@
 -- Core Neovim settings, leaders, options, basic keymaps, basic autocmds
 -- ========================================================================
 do
-  vim.g.mapleader      = ' '   -- Set <space> as the leader key
-  vim.g.maplocalleader = ' '   -- See `:help mapleader`
+  vim.g.mapleader       = ' '   -- Set <space> as the leader key
+  vim.g.maplocalleader  = ' '   -- See `:help mapleader`
                                -- NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
-  vim.opt.wrap          = false
+  vim.opt.wrap          = true
+  vim.opt.linebreak     = true
+  vim.opt.backup        = true
   vim.opt.sidescroll    = 1
   vim.opt.sidescrolloff = 20 -- when scroll to the right
   vim.o.cmdwinheight    = 20 -- bottom buffer when q:
-
-
+  vim.opt.termguicolors = true
+  vim.keymap.set("i", "jk", "<Esc>")
   ------------------------------------------------------
   vim.keymap.set("n", "<leader>t", function()
     vim.cmd("split")
@@ -27,7 +29,6 @@ do
     vim.cmd("startinsert")
   end, { desc = "Open terminal on right and run pi" })
   ------------------------------------------------------
-
   vim.api.nvim_create_user_command("Reload", function()
     vim.cmd("silent update")
     local ok, err = pcall(dofile, vim.env.MYVIMRC)
@@ -38,7 +39,6 @@ do
     end
   end, {})
   ------------------------------------------------------
-
   local netrw_picker_group = vim.api.nvim_create_augroup("NetrwPicker", { clear = true })
   vim.keymap.set("n", "<leader>e", function()
   -- If already inside netrw, close it with the same command
@@ -152,7 +152,6 @@ end, { desc = "Toggle file explorer at bottom" })
   vim.loader.enable()          -- Enable faster startup by caching compiled Lua modules
 
 
-
   vim.g.have_nerd_font = false -- Set to true if you have a Nerd Font installed and selected in the terminal
 
   -- [[ Setting options ]] See `:help vim.o`
@@ -161,10 +160,8 @@ end, { desc = "Toggle file explorer at bottom" })
 
   vim.o.number = true                                 -- Make line numbers default
                                                       -- vim.o.relativenumber = true
-
   vim.o.mouse = 'a'                                   -- Enable mouse mode, can be useful for resizing splits for example!
-
-   vim.o.showmode = false                           -- Don't show the mode, since it's already in the status line
+  vim.o.showmode = false                              -- Don't show the mode, since it's already in the status line
 
 
   vim.schedule(                                       -- Sync clipboard between OS and Neovim.
@@ -174,9 +171,9 @@ end, { desc = "Toggle file explorer at bottom" })
   )
 
   vim.o.breakindent = true                            -- Enable break indent
-  vim.o.undofile    = true                            -- Enable undo/redo changes even after closing and reopening a file
+  vim.o.undofile    = true                            -- $HOME/.local/state/nvim/undo/ Enable undo/redo changes even after closing and reopening a file
   vim.o.ignorecase  = true                            -- Case-insensitive searching UNLESS \C or one or more capital letters in the search term
-  vim.o.smartcase   = true
+  vim.o.smartcase   = true                            -- when search with /
   vim.o.signcolumn  = 'yes'                           -- Keep signcolumn on by default
   vim.o.updatetime  = 250                             -- Decrease update time
   vim.o.timeoutlen  = 300                             -- Decrease mapped sequence wait time
@@ -188,9 +185,9 @@ end, { desc = "Toggle file explorer at bottom" })
 
   vim.o.list        = true                            -- Sets how neovim will display certain whitespace characters in the editor.
   vim.opt.listchars = {                               -- See `:help 'list'`
-    tab = '» ',                                       -- and `:help 'listchars'`
+    tab   = '» ',                                     -- and `:help 'listchars'`
     trail = '·',                                      -- and `:help 'listchars'`
-    nbsp = '␣'                                        -- Notice listchars is set using `vim.opt` instead of `vim.o`.
+    nbsp  = '␣'                                       -- Notice listchars is set using `vim.opt` instead of `vim.o`.
   }                                                   -- It is very similar to `vim.o` but offers an interface for conveniently interacting with tables.
                                                       -- See `:help lua-options`
                                                       -- and `:help lua-guide-options`
@@ -457,8 +454,8 @@ do
 
   vim.api.nvim_set_hl(0, 'Normal',       { bg = '#1D1F23' })     -- main editor background
   vim.api.nvim_set_hl(0, 'NormalNC',     { bg = '#272727' })     -- inactive windows
-  vim.api.nvim_set_hl(0, 'NormalFloat',  { bg = '#000000' })     -- floating windows
-  vim.api.nvim_set_hl(0, 'FloatBorder',  { bg = '#000000' })     -- float borders
+  vim.api.nvim_set_hl(0, 'NormalFloat',  { bg = '#1D1F23' })     -- floating windows
+  vim.api.nvim_set_hl(0, 'FloatBorder',  { bg = '#1A1A1A' })     -- float borders
   vim.api.nvim_set_hl(0, 'SignColumn',   { bg = '#1d1f23' })     -- gutter/sign column
   vim.api.nvim_set_hl(0, 'LineNr',       { bg = '#1d1f23', fg = '#363636' })     -- line number column
   vim.api.nvim_set_hl(0, 'CursorLine',   { bg = '#1A1A1A' })     -- current line
@@ -470,7 +467,9 @@ do
   vim.api.nvim_set_hl(0, 'PmenuSel',     { bg = '#272727' })     -- selected completion item
   vim.api.nvim_set_hl(0, 'TabLine',      { bg = '#000000' })     -- tabline
   vim.api.nvim_set_hl(0, 'EndOfBuffer',  { bg = '#1d1f23' })     -- `~` empty buffer area
-  vim.api.nvim_set_hl(0, "TabLineSel", { bold = true, bg = "#3b4252", fg = "#ffffff", })
+  vim.api.nvim_set_hl(0, "TabLineSel", { bold = true, bg = "#363636", fg = "#ffffff", })
+
+
 end
 
 -- ============================================================
@@ -842,7 +841,7 @@ end
 
 vim.api.nvim_set_hl(0, "Visual", {
   fg = "#ffffff", -- selected text color
-  bg = "#3297FD", -- selected background color
+  bg = "#3c7cbd", -- selected background color
 })
 
 -- autopairs
@@ -896,3 +895,56 @@ vim.keymap.set(
     end,
     NS
 )
+---------------------------------------------------------------
+
+-- FFF-only highlight groups
+
+vim.api.nvim_set_hl(0, "FFFVisual",          { bg = "#363636", })
+
+vim.pack.add({ 'https://github.com/dmtrKovalenko/fff.nvim' })
+vim.api.nvim_create_autocmd('PackChanged', {
+  callback = function(ev)
+    local name, kind = ev.data.spec.name, ev.data.kind
+    if name == 'fff.nvim' and (kind == 'install' or kind == 'update') then
+      if not ev.data.active then vim.cmd.packadd('fff.nvim') end
+      require('fff.download').download_or_build_binary()
+    end
+  end,
+})
+
+
+vim.g.fff = {
+  hl = {
+
+    winhl = {
+      prompt    = "Visual:FFFVisual",
+      list      = "Visual:FFFVisual",
+      preview   = "Visual:FFFVisual",
+      file_info = "Visual:FFFVisual",
+    },
+  },
+  lazy_sync = true,
+    prompt = " ",
+  layout = {
+        flex = false
+  },
+  debug = {
+    enabled = true,
+    show_scores = false,
+    show_file_info = {
+      file_info = false,
+      score_breakdown = false,
+      timings = false,
+      full_path = true,
+    },
+    },
+  git = {
+        status_text_color = true,
+  },
+}
+vim.keymap.set('n', '<leader>ff', function() require('fff').find_files() end, { desc = 'FFFind files' })
+vim.keymap.set('n', '<leader>fg', function() require('fff').live_grep({grep={modes={'fuzzy','plain'}}}) end, { desc = 'FFFuzy grep word' })
+
+------------------------------
+vim.pack.add({ "https://github.com/vimpostor/vim-tpipeline" })
+vim.g.tpipeline_autoembed = 0
