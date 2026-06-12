@@ -13,7 +13,12 @@ do
   vim.opt.sidescrolloff = 20 -- when scroll to the right
   vim.o.cmdwinheight    = 20 -- bottom buffer when q:
   vim.opt.termguicolors = true
-  vim.keymap.set("i", "jk", "<Esc>")
+  vim.keymap.set("i", "jk", "<Esc><Right><Right>")
+  vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv", { desc = "Move selection down" }) -- vscode like moving character group
+  vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv", { desc = "Move selection up"   })
+    -- vim.keymap.set('n', '<leader>er', ':w<CR>:!ruby %<CR>')                  -- execute command example
+    -- vim.keymap.set('n', '<leader>',   ':w<CR>:!gcc % -o %:r && ./%:r<CR>')
+
   ------------------------------------------------------
   vim.keymap.set("n", "<leader>t", function()
     vim.cmd("split")
@@ -212,6 +217,7 @@ end, { desc = "Toggle file explorer at bottom" })
   -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
   -- or just use <C-\><C-n> to exit terminal mode
   vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+  vim.keymap.set('t', 'jk',         '<C-\\><C-n>', { desc = 'Exit terminal mode' })
   -- Keybinds to make split navigation easier.
   --  Use CTRL+<hjkl> to switch between windows
   --
