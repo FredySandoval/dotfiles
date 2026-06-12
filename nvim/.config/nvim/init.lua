@@ -951,6 +951,37 @@ vim.g.fff = {
 vim.keymap.set('n', '<leader>ff', function() require('fff').find_files() end, { desc = 'FFFind files' })
 vim.keymap.set('n', '<leader>fg', function() require('fff').live_grep({grep={modes={'fuzzy','plain'}}}) end, { desc = 'FFFuzy grep word' })
 
-------------------------------
 vim.pack.add({ "https://github.com/vimpostor/vim-tpipeline" })
 vim.g.tpipeline_autoembed = 0
+------------------------------
+vim.pack.add({ "https://github.com/kawre/neotab.nvim" })
+require("neotab").setup({
+  tabkey = "<Tab>",
+  reverse_key = "<S-Tab>",
+  act_as_tab = true,
+  behavior = "nested",
+
+  pairs = {
+    { open = "(", close = ")" },
+    { open = "[", close = "]" },
+    { open = "{", close = "}" },
+    { open = "'", close = "'" },
+    { open = '"', close = '"' },
+    { open = "`", close = "`" },
+    { open = "<", close = ">" },
+  },
+
+  exclude = {},
+
+  smart_punctuators = {
+    enabled = false,
+    semicolon = {
+      enabled = false,
+      ft = { "cs", "c", "cpp", "java" },
+    },
+    escape = {
+      enabled = false,
+      triggers = {},
+    },
+  },
+})
