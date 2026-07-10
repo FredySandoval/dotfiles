@@ -3,21 +3,23 @@
 -- Core Neovim settings, leaders, options, basic keymaps, basic autocmds
 -- ========================================================================
 do
-  vim.g.mapleader       = ' '   -- Set <space> as the leader key
-  vim.g.maplocalleader  = ' '   -- See `:help mapleader`
-                               -- NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
-  vim.opt.wrap          = true
+  vim.g.mapleader       = ' '                                                    -- Set <space> as the leader key
+  vim.g.maplocalleader  = ' '                                                    -- See `:help mapleader`
+                                                                                 -- NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
+  vim.opt.wrap          = false
   vim.opt.linebreak     = true
-  vim.opt.backup        = true
   vim.opt.sidescroll    = 1
-  vim.opt.sidescrolloff = 20 -- when scroll to the right
-  vim.o.cmdwinheight    = 20 -- bottom buffer when q:
+  vim.opt.sidescrolloff = 20                                                     -- when scroll to the right
+  vim.o.cmdwinheight    = 20                                                     -- bottom buffer when q:
   vim.opt.termguicolors = true
+  vim.opt.virtualedit = "block"                                                  -- cursor can move past the end of shorter lines while in block mode
   vim.keymap.set("i", "jk", "<Esc><Right><Right>")
   vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv", { desc = "Move selection down" }) -- vscode like moving character group
   vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv", { desc = "Move selection up"   })
-    -- vim.keymap.set('n', '<leader>er', ':w<CR>:!ruby %<CR>')                  -- execute command example
+    -- execute command example
+    -- vim.keymap.set('n', '<leader>er', ':w<CR>:!ruby %<CR>')
     -- vim.keymap.set('n', '<leader>',   ':w<CR>:!gcc % -o %:r && ./%:r<CR>')
+
 
   ------------------------------------------------------
   vim.keymap.set("n", "<leader>t", function()
@@ -44,83 +46,55 @@ do
     end
   end, {})
   ------------------------------------------------------
-  local netrw_picker_group = vim.api.nvim_create_augroup("NetrwPicker", { clear = true })
-  vim.keymap.set("n", "<leader>e", function()
-  -- If already inside netrw, close it with the same command
-  if vim.bo.filetype == "netrw" then
-    vim.cmd("close")
-    return
-  end
+vim.g.netrw_banner       = 0        -- Hide the banner
+vim.g.netrw_liststyle    = 3        -- Tree view
+vim.g.netrw_winsize      = 30       -- Explorer width
+vim.g.netrw_browse_split = 0
+vim.g.netrw_altv         = 1        -- Open vertical split on the right
+vim.g.netrw_fastbrowse   = 2        -- keep netrw buffers hidden (preserves expanded tree state across toggles)
 
-  vim.g.netrw_browse_split = 0
-  vim.g.netrw_fastbrowse = 0
-
-  local prev_win = vim.api.nvim_get_current_win()
-
-  vim.cmd("botright split")
-  vim.cmd("Explore")
-
-  local netrw_win = vim.api.nvim_get_current_win()
-
-  local function fix_netrw_height()
-    if vim.api.nvim_win_is_valid(netrw_win) then
-      vim.api.nvim_win_set_height(netrw_win, 20)
+-- Remember the netrw buffer across toggles so expanded folders survive,
+-- and root the tree at the cwd instead of the current file's directory.
+local explorer_buf = nil
+local explorer_winvars = nil -- netrw stores tree state (treetop/treedict) window-locally; save it across toggles
+vim.keymap.set("n", "<leader>e", function()
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.bo[buf].filetype == "netrw" then
+      explorer_buf = buf
+      explorer_winvars = {}
+      for _, name in ipairs({ "netrw_treetop", "netrw_treedict", "netrw_curdir", "netrw_liststyle", "netrw_bannercnt", "netrw_method", "netrw_prvdir" }) do
+        local ok, val = pcall(vim.api.nvim_win_get_var, win, name)
+        if ok then explorer_winvars[name] = val end
+      end
+      vim.bo[buf].bufhidden = "hide" -- netrw resets this to wipe; force it so the tree survives
+      vim.api.nvim_win_close(win, true)
+      return
     end
   end
 
-  local function set_netrw_keymaps(buf)
-    vim.keymap.set("n", "<CR>", function()
-      local file = vim.fn.expand("<cfile>")
-      if file == "" then
-        return
-      end
-
-      local dir = vim.b.netrw_curdir or vim.fn.getcwd()
-      local fullpath = vim.fn.fnamemodify(dir .. "/" .. file, ":p")
-
-      if vim.fn.isdirectory(fullpath) == 1 then
-        vim.cmd("Explore " .. vim.fn.fnameescape(fullpath))
-        vim.schedule(fix_netrw_height)
-        return
-      end
-
-      if vim.api.nvim_win_is_valid(netrw_win) then
-        vim.api.nvim_win_close(netrw_win, true)
-      end
-
-      if vim.api.nvim_win_is_valid(prev_win) then
-        vim.api.nvim_set_current_win(prev_win)
-        vim.cmd("edit " .. vim.fn.fnameescape(fullpath))
-      end
-    end, {
-      buffer = buf,
-      desc = "Pick file and close bottom netrw",
-    })
+  if explorer_buf and vim.api.nvim_buf_is_valid(explorer_buf) then
+    vim.cmd("topleft vsplit")
+    vim.api.nvim_win_set_buf(0, explorer_buf)
+    for name, val in pairs(explorer_winvars or {}) do
+      vim.api.nvim_win_set_var(0, name, val)
+    end
+  else
+    vim.cmd("Lexplore " .. vim.fn.fnameescape(vim.fn.getcwd()))
+    explorer_buf = vim.api.nvim_get_current_buf()
   end
+  vim.api.nvim_win_set_width(0, 30)
+end, { desc = "Toggle file explorer" })
 
-  fix_netrw_height()
-  set_netrw_keymaps(vim.api.nvim_get_current_buf())
-
-  vim.api.nvim_create_autocmd("FileType", {
-    group = netrw_picker_group,
-    pattern = "netrw",
-    callback = function(args)
-      if vim.api.nvim_get_current_win() == netrw_win then
-        set_netrw_keymaps(args.buf)
-        vim.schedule(fix_netrw_height)
-      end
-    end,
-  })
-
-  vim.api.nvim_create_autocmd({ "BufEnter", "WinEnter" }, {
-    group = netrw_picker_group,
-    callback = function()
-      if vim.api.nvim_get_current_win() == netrw_win then
-        vim.schedule(fix_netrw_height)
-      end
-    end,
-  })
-end, { desc = "Toggle file explorer at bottom" })
+-- Netrw defines a buffer-local <C-l> (refresh listing) that shadows the
+-- global window-navigation mapping; restore window movement inside the tree.
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "netrw",
+  callback = function(args)
+    vim.keymap.set("n", "<C-l>", "<C-w>l", { buffer = args.buf, nowait = true, desc = "Move focus to the right window" })
+    vim.bo[args.buf].bufhidden = "hide" -- keep the tree buffer (and its expanded folders) alive when the window closes
+  end,
+})
 ------------------------------------------------------
 -- fpaste
    -- Automatically detect files changed outside Neovim.
@@ -144,10 +118,10 @@ end, { desc = "Toggle file explorer at bottom" })
   )
 
   vim.opt.guicursor = {        -- Set cursor shape by mode:
-    "n-v-c:block",             -- normal/visual/command                = █
+      "n-v-c:block",           -- normal/visual/command                = █
     "i-ci-ve:ver25",           -- insert/command-insert/visual-exclude = ▏
-    "r-cr:hor20",              -- replace/command-replace              = ▁
-    "o:hor50",                 -- operator-pending                     = _
+       "r-cr:hor20",           -- replace/command-replace              = ▁
+          "o:hor50",           -- operator-pending                     = _
   }
   vim.o.tabstop     = 4        -- how wide a real tab character appears
   vim.o.shiftwidth  = 4        -- how many spaces indentation uses
@@ -163,13 +137,12 @@ end, { desc = "Toggle file explorer at bottom" })
   -- NOTE: You can change these options as you wish!
   -- For more options, you can see `:help option-list`
 
-  vim.o.number = true                                 -- Make line numbers default
-                                                      -- vim.o.relativenumber = true
-  vim.o.mouse = 'a'                                   -- Enable mouse mode, can be useful for resizing splits for example!
-  vim.o.showmode = false                              -- Don't show the mode, since it's already in the status line
-
-
-  vim.schedule(                                       -- Sync clipboard between OS and Neovim.
+  vim.o.number       = true                            -- Make line numbers default
+  vim.o.mouse        = 'a'                             -- Enable mouse mode, can be useful for resizing splits for example!
+  vim.o.showmode     = false                           -- Don't show the mode, since it's already in the status line
+  vim.opt.laststatus = 3                               -- Hide the bottom statusline
+  vim.opt.statusline = "%f %m%r%h%w %=  buf:%n %l:%L"
+  vim.schedule(                                        -- Sync clipboard between OS and Neovim.
     function()
       vim.o.clipboard = 'unnamedplus'
     end
@@ -192,7 +165,7 @@ end, { desc = "Toggle file explorer at bottom" })
   vim.opt.listchars = {                               -- See `:help 'list'`
     tab   = '» ',                                     -- and `:help 'listchars'`
     trail = '·',                                      -- and `:help 'listchars'`
-    nbsp  = '␣'                                       -- Notice listchars is set using `vim.opt` instead of `vim.o`.
+    nbsp  = '␣',                                      -- Notice listchars is set using `vim.opt` instead of `vim.o`.
   }                                                   -- It is very similar to `vim.o` but offers an interface for conveniently interacting with tables.
                                                       -- See `:help lua-options`
                                                       -- and `:help lua-guide-options`
@@ -217,12 +190,12 @@ end, { desc = "Toggle file explorer at bottom" })
   -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
   -- or just use <C-\><C-n> to exit terminal mode
   vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
-  vim.keymap.set('t', 'jk',         '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+--  vim.keymap.set('t',         'jk', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
   -- Keybinds to make split navigation easier.
   --  Use CTRL+<hjkl> to switch between windows
   --
   --  See `:help wincmd` for a list of all window commands
-  vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+  vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window'  })
   vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
   vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
   vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
@@ -257,9 +230,9 @@ end, { desc = "Toggle file explorer at bottom" })
     jump = {
       on_jump = function(_, bufnr)
         vim.diagnostic.open_float {
-          bufnr = bufnr,
-          scope = 'cursor',
-          focus = false,
+          bufnr =    bufnr ,
+          scope = 'cursor' ,
+          focus =    false ,
         }
       end,
     },
@@ -404,29 +377,29 @@ do
     mode = mode or 'n'
     vim.keymap.set(mode, keys, func, { desc = desc })
   end
-  map(']m', function() ai.move_cursor('right', 'a', 'f', { search_method = 'next' }) end, 'Mini.ai: Next function start')
+  map(']m', function() ai.move_cursor('right', 'a', 'f', { search_method = 'next' }) end, 'Mini.ai: Next function start'    )
   map('[m', function() ai.move_cursor('left' , 'a', 'f', { search_method = 'prev' }) end, 'Mini.ai: Previous function start')
-  map(']M', function() ai.move_cursor('right', 'a', 'f', { search_method = 'next' }) end, 'Mini.ai: Next function end')
-  map('[M', function() ai.move_cursor('left' , 'a', 'f', { search_method = 'prev' }) end, 'Mini.ai: Previous function end')
+  map(']M', function() ai.move_cursor('right', 'a', 'f', { search_method = 'next' }) end, 'Mini.ai: Next function end'      )
+  map('[M', function() ai.move_cursor('left' , 'a', 'f', { search_method = 'prev' }) end, 'Mini.ai: Previous function end'  )
 
 
   -- Dim comments only; keep the rest of the vscode colorscheme unchanged.
   -- Tree-sitter/LSP can use their own comment highlight groups, so override those too.
   local function dim_comments()
     local comment = {
-      fg = '#4e574c',
-      italic = false,
+      fg     = '#4e574c',
+      italic =     false,
     }
 
     for _, group in ipairs {
-      'Comment',
-      '@comment',
+      'Comment'               ,
+      '@comment'              ,
       '@comment.documentation',
-      '@comment.error',
-      '@comment.warning',
-      '@comment.todo',
-      '@comment.note',
-      '@lsp.type.comment',
+      '@comment.error'        ,
+      '@comment.warning'      ,
+      '@comment.todo'         ,
+      '@comment.note'         ,
+      '@lsp.type.comment'     ,
     } do
       vim.api.nvim_set_hl(0, group, comment)
     end
@@ -435,15 +408,15 @@ do
   local function soft_diagnostic_underlines()
     -- Soft diagnostic underline colors. `sp` controls underline/undercurl color.
     vim.api.nvim_set_hl(0, 'DiagnosticUnderlineError', { undercurl = true, sp = '#9c3638' })
-    vim.api.nvim_set_hl(0, 'DiagnosticUnderlineWarn',  { undercurl = true, sp = '#a69063' })
-    vim.api.nvim_set_hl(0, 'DiagnosticUnderlineInfo',  { undercurl = true, sp = '#75beff' })
-    vim.api.nvim_set_hl(0, 'DiagnosticUnderlineHint',  { undercurl = true, sp = '#8fbc8f' })
+    vim.api.nvim_set_hl(0, 'DiagnosticUnderlineWarn' , { undercurl = true, sp = '#a69063' })
+    vim.api.nvim_set_hl(0, 'DiagnosticUnderlineInfo' , { undercurl = true, sp = '#75beff' })
+    vim.api.nvim_set_hl(0, 'DiagnosticUnderlineHint' , { undercurl = true, sp = '#8fbc8f' })
 
 
-    vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextError', { fg = '#693738', bg = 'NONE' })
-    vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextWarn',  { fg = '#a69063', bg = 'NONE' })
-    vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextInfo',  { fg = '#75beff', bg = 'NONE' })
-    vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextHint',  { fg = '#8fbc8f', bg = 'NONE' })
+    vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextError', { fg = '#693738' , bg = 'NONE' })
+    vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextWarn' , { fg = '#a69063', bg = 'NONE'  })
+    vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextInfo' , { fg = '#75beff', bg = 'NONE'  })
+    vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextHint' , { fg = '#8fbc8f', bg = 'NONE'  })
   end
 
   local function apply_theme_overrides()
@@ -458,22 +431,22 @@ do
     callback = apply_theme_overrides,
   })
 
-  vim.api.nvim_set_hl(0, 'Normal',       { bg = '#1D1F23' })     -- main editor background
-  vim.api.nvim_set_hl(0, 'NormalNC',     { bg = '#272727' })     -- inactive windows
-  vim.api.nvim_set_hl(0, 'NormalFloat',  { bg = '#1D1F23' })     -- floating windows
-  vim.api.nvim_set_hl(0, 'FloatBorder',  { bg = '#1A1A1A' })     -- float borders
-  vim.api.nvim_set_hl(0, 'SignColumn',   { bg = '#1d1f23' })     -- gutter/sign column
-  vim.api.nvim_set_hl(0, 'LineNr',       { bg = '#1d1f23', fg = '#363636' })     -- line number column
-  vim.api.nvim_set_hl(0, 'CursorLine',   { bg = '#1A1A1A' })     -- current line
+  vim.api.nvim_set_hl(0, 'Normal'      , { bg = '#1D1F23' })     -- main editor background
+  vim.api.nvim_set_hl(0, 'NormalNC'    , { bg = '#272727' })     -- inactive windows
+  vim.api.nvim_set_hl(0, 'NormalFloat' , { bg = '#1D1F23' })     -- floating windows
+  vim.api.nvim_set_hl(0, 'FloatBorder' , { bg = '#1A1A1A' })     -- float borders
+  vim.api.nvim_set_hl(0, 'SignColumn'  , { bg = '#1d1f23' })     -- gutter/sign column
+  vim.api.nvim_set_hl(0, 'LineNr'      , { bg = '#1d1f23', fg = '#363636' })     -- line number column
+  vim.api.nvim_set_hl(0, 'CursorLine'  , { bg = '#1A1A1A' })     -- current line
   vim.api.nvim_set_hl(0, 'CursorLineNr', { bg = '#000000' })     -- current line number
-  vim.api.nvim_set_hl(0, 'StatusLine',   { bg = '#000000' })     -- active statusline
+  vim.api.nvim_set_hl(0, 'StatusLine'  , { bg = '#000000' })     -- active statusline
   vim.api.nvim_set_hl(0, 'StatusLineNC', { bg = '#000000' })     -- inactive statusline
   vim.api.nvim_set_hl(0, 'WinSeparator', { bg = '#000000' })     -- window separators
-  vim.api.nvim_set_hl(0, 'Pmenu',        { bg = '#000000' })     -- completion menu
-  vim.api.nvim_set_hl(0, 'PmenuSel',     { bg = '#272727' })     -- selected completion item
-  vim.api.nvim_set_hl(0, 'TabLine',      { bg = '#000000' })     -- tabline
-  vim.api.nvim_set_hl(0, 'EndOfBuffer',  { bg = '#1d1f23' })     -- `~` empty buffer area
-  vim.api.nvim_set_hl(0, "TabLineSel", { bold = true, bg = "#363636", fg = "#ffffff", })
+  vim.api.nvim_set_hl(0, 'Pmenu'       , { bg = '#000000' })     -- completion menu
+  vim.api.nvim_set_hl(0, 'PmenuSel'    , { bg = '#272727' })     -- selected completion item
+  vim.api.nvim_set_hl(0, 'TabLine'     , { bg = '#000000' })     -- tabline
+  vim.api.nvim_set_hl(0, 'EndOfBuffer' , { bg = '#1d1f23' })     -- `~` empty buffer area
+  vim.api.nvim_set_hl(0, "TabLineSel"  , { bold = true, bg = "#363636", fg = "#ffffff", })
 
 
 end
@@ -529,12 +502,13 @@ do
         vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
       end
 
-      map('gd',  vim.lsp.buf.definition,  '[g]oto [d]efinition')                      -- Jump to the definition of the symbol under your cursor.
-      map('gD',  vim.lsp.buf.declaration, '[g]oto [D]eclaration')                     -- WARN: This is not Goto Definition, this is Goto Declaration.
-      map('grn', vim.lsp.buf.rename,      '[g]oto [r]e[n]ame')                        -- Rename the variable under your cursor.
-      map('gra', vim.lsp.buf.code_action, '[g]oto [r]efactor [action]', { 'n', 'x' }) -- Execute a code action, usually your cursor needs to be on top of an error
-      map('K',   vim.lsp.buf.hover,       '[K] Show hover documentation')
-      map('gh', vim.diagnostic.open_float, 'Show line diagnostic')
+      map( 'gd' , vim.lsp.buf.definition    , '[g]oto [d]efinition         ')   -- Jump to the definition of the symbol under your cursor.
+      map( 'gI' , vim.lsp.buf.implementation, '[g]oto [I]mplementation     ')
+      map( 'gD' , vim.lsp.buf.declaration   , '[g]oto [D]eclaration        ')   -- WARN: This is not Goto Definition, this is Goto Declaration.
+      map( 'grn', vim.lsp.buf.rename        , '[g]oto [r]e[n]ame           ')   -- Rename the variable under your cursor.
+      map( 'gra', vim.lsp.buf.code_action   , '[g]oto [r]efactor [action]  ',{ 'n', 'x' })   -- Execute a code action, usually your cursor needs to be on top of an error
+      map( 'K'  , vim.lsp.buf.hover         , '[K] Show hover documentation')
+      map( 'gh' , vim.diagnostic.open_float , 'Show line diagnostic        ')
 
       -- Highlight references of the word under your cursor.
       -- Put this inside your LspAttach callback.
@@ -591,9 +565,9 @@ do
   --  See `:help lsp-config` for information about keys and how to configure
   ---@type table<string, vim.lsp.Config>
   local servers = {
-    clangd = {},
-    gopls = {},
-    pyright = {},
+    clangd        = {},
+    gopls         = {},
+    pyright       = {},
     rust_analyzer = {},
     --
     -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -730,11 +704,10 @@ do
     completion = {
       -- By default, you may press `<c-space>` to show the documentation.
       -- Optionally, set `auto_show = true` to show the documentation after a delay.
-      menu          = { auto_show     = true },
-      documentation = { auto_show     = true },
-      ghost_text    = { enabled       = false, show_with_menu = false },
-      accept        = { auto_brackets = { enabled = true } },
-
+      menu          = { auto_show = true },
+      documentation = { auto_show = true },
+      ghost_text    = { enabled = false, show_with_menu = false },
+      accept        = { auto_brackets  = { enabled = true }     },
     },
 
     sources = {
@@ -856,51 +829,6 @@ vim.api.nvim_set_hl(0, "Visual", {
 vim.pack.add { gh '/windwp/nvim-autopairs' }
 require('nvim-autopairs').setup {}
 
-
--- A minimal plugin for NeoVim for aligning lines
-vim.pack.add { { src = gh 'Vonr/align.nvim', branch = "v2", } }
-local NS = { noremap = true, silent = true }
--- Aligns to a string with previews
-vim.keymap.set(
-    'x',
-    'aw',
-    function()
-        require'align'.align_to_string({
-            preview = true,
-            regex = false,
-        })
-    end,
-    NS
-)
-
-
--- Example gawip to align a paragraph to a string with previews
-vim.keymap.set(
-    'n',
-    'gaw',
-    function()
-        local a = require'align'
-        a.operator(
-            a.align_to_string,
-            {
-                regex = false,
-                preview = true,
-            }
-        )
-    end,
-    NS
-)
-
--- Example gaaip to align a paragraph to 1 character
-vim.keymap.set(
-    'n',
-    'gaa',
-    function()
-        local a = require'align'
-        a.operator(a.align_to_char)
-    end,
-    NS
-)
 ---------------------------------------------------------------
 
 -- FFF-only highlight groups
@@ -938,10 +866,10 @@ vim.g.fff = {
     enabled = true,
     show_scores = false,
     show_file_info = {
-      file_info = false,
+      file_info       = false,
       score_breakdown = false,
-      timings = false,
-      full_path = true,
+      timings         = false,
+      full_path       = true,
     },
     },
   git = {
@@ -952,7 +880,7 @@ vim.keymap.set('n', '<leader>ff', function() require('fff').find_files() end, { 
 vim.keymap.set('n', '<leader>fg', function() require('fff').live_grep({grep={modes={'fuzzy','plain'}}}) end, { desc = 'FFFuzy grep word' })
 
 vim.pack.add({ "https://github.com/vimpostor/vim-tpipeline" })
-vim.g.tpipeline_autoembed = 0
+-- vim.g.tpipeline_autoembed = 0
 ------------------------------
 vim.pack.add({ "https://github.com/kawre/neotab.nvim" })
 require("neotab").setup({
@@ -985,3 +913,19 @@ require("neotab").setup({
     },
   },
 })
+
+-------------------------------
+vim.pack.add({ 'https://github.com/nvim-mini/mini.align' })
+require("mini.align").setup()
+
+------------------------------
+vim.pack.add({
+  "https://github.com/nvim-lua/plenary.nvim",
+  "https://github.com/kdheepak/lazygit.nvim",
+})
+
+vim.keymap.set("n", "<leader>l", "<cmd>LazyGit<CR>", {
+  desc   = "LazyGit",
+  silent = true     ,
+})
+-- ---------------------------------------------------
