@@ -64,3 +64,8 @@ cursor = "#f5ca0c"
 # key = "C"
 # mods = "Control"
 # action = "None"
+
+[[keyboard.bindings]]
+key = "Return"
+mods = "Shift"
+chars = "\u001B\r"
