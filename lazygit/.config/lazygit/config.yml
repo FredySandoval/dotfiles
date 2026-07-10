@@ -32,7 +32,7 @@ gui:
     inactiveViewSelectedLineBgColor:
       - "#3C4831"
     cherryPickedCommitFgColor:  # Foreground color of copied commit
-      - red
+      - white
     cherryPickedCommitBgColor:  # Background color of copied commit
       - red
     markedBaseCommitFgColor:    # Foreground color of marked base commit (for rebase)
